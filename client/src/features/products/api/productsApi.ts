@@ -1,18 +1,25 @@
-import { axiosClient } from "../../../lib/axiosClient";
-import type { ProductsResponse, Product } from "../types"
+import type { Product } from "../types";
 
 export const getProducts = async ()=>{
-    const response = await axiosClient.get<ProductsResponse | Product[]>("/products");
+    const response = await fetch("/products.json");
 
-    if (Array.isArray(response.data)){
-        return response.data;
+    if (!response.ok) {
+        throw new Error("Failed to load products");
     }
-    return response.data.products;
+
+    const products = await response.json() as Product[];
+    return products;
 }
 
 export const getProduct = async (id:string | number)=>{
-    const response = await axiosClient.get<Product>(`/products/${id}`);
-    return response.data;
+    const products = await getProducts();
+    const product = products.find((product) => product.id === Number(id));
+
+    if (!product) {
+        throw new Error("Product not found");
+    }
+
+    return product;
 }
 
 export const getCategories = async ()=>{
