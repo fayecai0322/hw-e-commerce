@@ -1,7 +1,8 @@
 import type { Product } from "../types";
 
 export const getProducts = async ()=>{
-    const response = await fetch("/products.json");
+    const response = await fetch(`${import.meta.env.BASE_URL}products.json`);
+
 
     if (!response.ok) {
         throw new Error("Failed to load products");
