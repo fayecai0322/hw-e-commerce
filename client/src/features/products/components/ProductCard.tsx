@@ -1,6 +1,7 @@
 import { Badge, Button, Card, Group, Text, Image } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
 import type { Product } from "../types";
+import { useAddCartItem } from "../../cart/hooks/useCart";
 
 interface ProductCardProps {
   product: Product;
@@ -11,6 +12,8 @@ export const ProductCard = ({ product }: ProductCardProps) => {
 
   const discountedPrice =
     product.price * (1 - product.discountPercentage / 100);
+
+  const addCartItemMutation = useAddCartItem();
 
   return (
     <Card shadow="sm" padding="lg" radius="md" withBorder>
@@ -52,6 +55,21 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         onClick={() => navigate(`/products/${product.id}`)}
       >
         View Details
+      </Button>
+      <Button
+        color="green"
+        fullWidth
+        mt="sm"
+        radius="md"
+        loading={addCartItemMutation.isPending}
+        onClick={() =>
+          addCartItemMutation.mutate({
+            productId: product.id,
+            quantity: 1,
+          })
+        }
+      >
+        Add to Cart
       </Button>
     </Card>
   );
