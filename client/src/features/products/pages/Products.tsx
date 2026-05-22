@@ -4,6 +4,7 @@ import { Spinner } from "../../../components/ui/Spinner";
 import { ErrorMessage } from "../../../components/ui/ErrorMessage";
 import { SimpleGrid } from "@mantine/core";
 import { ProductCard } from "../components/ProductCard";
+import type { Product } from "../types";
 
 const Products = () => {
   const { data: products, isLoading, isError, error } = useProducts();
@@ -23,7 +24,7 @@ const Products = () => {
         Our Products
       </Title>
       <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }}>
-        {products?.map((product) => (
+        {products?.map((product: Product) => (
           <ProductCard key={product.id} product={product} />
         ))}
       </SimpleGrid>
