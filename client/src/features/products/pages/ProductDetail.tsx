@@ -8,41 +8,78 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { useProduct } from "../hooks/useProducts";
+import { Spinner } from "../../../components/ui/Spinner";
+import { ErrorMessage } from "../../../components/ui/ErrorMessage";
+import { useAddCartItem } from "../../cart/hooks/useCart";
+import { useAuth } from "../../auth/context/AuthContext";
 
 const ProductDetail = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const { data: product, isLoading, isError, error } = useProduct(id ?? "");
+  const addCartItemMutation = useAddCartItem();
+  const {isAuthenticated} = useAuth();
+
+  if (isLoading) {
+    return <Spinner />;
+  }
+
+  if (isError) {
+    return (
+      <Container size="lg" py="xl">
+        <ErrorMessage message={error.message} />
+      </Container>
+    );
+  }
+
+  if (!product) {
+    return null;
+  }
 
   return (
     <Container size="lg" py="xl">
       <Grid>
         <Grid.Col span={{ base: 12, md: 6 }}>
-          <Image
-            src="https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp"
-            alt="Product"
-            height={400}
-          />
+          <Image src={product.thumbnail} alt={product.title} height={400} />
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 6 }}>
           <Title order={1} mb="md">
-            Product Title
+            {product.title}
           </Title>
           <Group mb="md">
             <Badge size="lg" color="pink">
-              $99.99
+              ${product.price.toFixed(2)}
             </Badge>
             <Badge size="lg" color="blue">
-              Category
+              {product.category}
             </Badge>
           </Group>
           <Text size="lg" mb="md">
-            Product description goes here
+            {product.description}
           </Text>
           <Text size="md" mb="xl" c="dimmed">
-            Stock: 10 units available
+            Stock: {product.stock} units available
           </Text>
           <Group>
-            <Button size="lg">Add to Cart</Button>
+            <Button
+              size="lg"
+              loading={addCartItemMutation.isPending}
+              onClick={() =>{
+                if (!isAuthenticated){
+                  navigate("/login");
+                  return;
+                }
+                addCartItemMutation.mutate({
+                  productId: product.id,
+                  quantity: 1,
+                })
+              }
+            }
+            >
+              Add to Cart
+            </Button>
             <Button
               size="lg"
               variant="outline"

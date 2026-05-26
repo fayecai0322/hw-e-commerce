@@ -10,7 +10,7 @@ interface AuthContextValue {
     login : (Credentials: LoginCredentials) => Promise<void>;
     logout: ()=> void;
 }
-
+// 登录状态不需要一层一层 props 传下去，任何被 AuthProvider 包住的组件都可以直接拿
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 const USER_STORAGE_KEY = "authUser";
 const TOKEN_STORAGE_KEY = "token";
@@ -80,6 +80,7 @@ export const AuthProvider = ({children}: AuthProviderProps)=>{
     };
     // Custom hook for using auth context in components.
     export const useAuth = () => {
+        // 读取 AuthContext 里面当前的值。
     const context = useContext(AuthContext);
 
     if (!context) {

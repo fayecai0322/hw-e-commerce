@@ -6,12 +6,17 @@ import {
   IconShoppingCart,
 } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/context/AuthContext";
 
 import { SearchBar } from "./SearchBar";
 import { ThemeToggler } from "./ThemeToggler";
+import { useCart } from "../cart/hooks/useCart";
 
 export const Navbar = () => {
   const navigate = useNavigate();
+  const { user, isAuthenticated, logout } = useAuth();
+  const { data: cart } = useCart();
+  const cartItemCount = cart?.totalQuantity ?? 0;
 
   return (
     <Group
@@ -32,7 +37,13 @@ export const Navbar = () => {
 
       <Group>
         <ThemeToggler />
-        <Indicator label={1} size={16} color="red" position="middle-start">
+        <Indicator
+          label={cartItemCount}
+          size={16}
+          color="red"
+          position="middle-start"
+          disabled={cartItemCount === 0}
+        >
           <Button
             variant="subtle"
             leftSection={<IconShoppingCart size={18} />}
@@ -50,7 +61,9 @@ export const Navbar = () => {
             >
               <Group gap="xs">
                 <Avatar src="" alt="User" size="sm" />
-                <Text size="sm">User</Text>
+                <Text size="sm">
+                  {isAuthenticated ? user?.username : "Guest"}
+                </Text>
               </Group>
             </Button>
           </Menu.Target>
@@ -64,13 +77,20 @@ export const Navbar = () => {
               Settings
             </Menu.Item>
             <Menu.Divider />
-            <Menu.Item
-              leftSection={<IconLogout size={16} />}
-              color="red"
-              onClick={() => navigate("/login")}
-            >
-              Logout
-            </Menu.Item>
+            {isAuthenticated ? (
+              <Menu.Item
+                leftSection={<IconLogout size={16} />}
+                color="red"
+                onClick={() => {
+                  logout();
+                  navigate("/login");
+                }}
+              >
+                Logout
+              </Menu.Item>
+            ) : (
+              <Menu.Item onClick={() => navigate("/login")}>Login</Menu.Item>
+            )}
           </Menu.Dropdown>
         </Menu>
       </Group>
