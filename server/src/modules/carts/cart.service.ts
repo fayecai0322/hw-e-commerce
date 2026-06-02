@@ -1,106 +1,61 @@
 import { BadRequestError, NotFoundError } from "../../core/errors";
 import { getProductById } from "../products/product.service";
-import type { AddCartItemInput, Cart, CartItem, UpdateCartItemInput } from "./types";
+import * as cartRepository from "./cart.repository";
+import type { AddCartItemInput, UpdateCartItemInput } from "./types";
 
+const DEFAULT_USER_ID = 1;
 
-let cart: Cart = {
-  id: 1,
-  products: [],
-  total: 0,
-  discountedTotal: 0,
-  userId: 1,
-  totalProducts: 0,
-  totalQuantity: 0,
-};
-// Omit<Cart, "id" | "products" | "userId">从 Cart 类型里拿掉 "id"、"products"、"userId" 这三个字段，剩下的字段组成一个新类型。
-const calculateCartTotals = (products: CartItem[]): Omit<Cart, "id" | "products" | "userId"> =>{
-    const total = products.reduce((sum, item)=> sum + item.total, 0);
-    const discountedTotal = products.reduce((sum, item)=> sum + item.discountedTotal, 0);
-    const totalProducts = products.length;
-    const totalQuantity = products.reduce((sum,item)=> sum + item.quantity, 0);
-
-    return {
-        total,
-        discountedTotal,
-        totalProducts,
-        totalQuantity,
-    };
+export const getCart = async () => {
+  return cartRepository.findCartByUserId(DEFAULT_USER_ID);
 };
 
-const createCartItem = (productId: number, quantity: number): CartItem => {
-    if (quantity <= 0){
-        throw new BadRequestError("Quantity must be greater than 0");
-    }
-    const product = getProductById(productId);
-    const total = product.price * quantity;
-    const discountedTotal = total * (1 - product.discountPercentage / 100);
+export const addCartItem = async (input: AddCartItemInput) => {
+  if (input.quantity <= 0) {
+    throw new BadRequestError("Quantity must be greater than 0");
+  }
 
-    return {
-        id: product.id,
-        title: product.title,
-        price: product.price,
-        quantity: quantity,
-        total: total,
-        discountPercentage: product.discountPercentage,
-        discountedTotal : discountedTotal,
-        thumbnail: product.thumbnail,
-    }
-}
+  await getProductById(input.productId);
 
-const rebuildCart = (products: CartItem[]): Cart => {
-    const totals = calculateCartTotals(products);
-    cart = {
-        ...cart,
-        products,
-        ...totals,
-    }
-    return cart;
-}
+  return cartRepository.addCartItem(
+    DEFAULT_USER_ID,
+    input.productId,
+    input.quantity,
+  );
+};
 
-export const getCart = (): Cart=>{
-    return cart;
-}
-
-export const addCartItem = (input: AddCartItemInput): Cart =>{
-    const existingItem = cart.products.find(
-        (item)=> item.id === input.productId
-    );
-    if (existingItem){
-        const updatedProducts = cart.products.map((item)=>
-        item.id === input.productId? createCartItem(input.productId, item.quantity + input.quantity) : item,
-        );
-        return rebuildCart(updatedProducts);
-    }
-    const newItem = createCartItem(input.productId, input.quantity);
-    return rebuildCart([...cart.products, newItem]);
-}
-
-export const updateCartItem = (
+export const updateCartItem = async (
   productId: number,
   input: UpdateCartItemInput,
-): Cart => {
-  const existingItem = cart.products.find((item) => item.id === productId);
+) => {
+  if (input.quantity <= 0) {
+    throw new BadRequestError("Quantity must be greater than 0");
+  }
 
-  if (!existingItem) {
+  await getProductById(productId);
+
+  const cart = await cartRepository.updateCartItem(
+    DEFAULT_USER_ID,
+    productId,
+    input.quantity,
+  );
+
+  if (!cart) {
     throw new NotFoundError("Cart item not found");
   }
 
-  const updatedProducts = cart.products.map((item) =>
-    item.id === productId ? createCartItem(productId, input.quantity) : item,
-  );
-
-  return rebuildCart(updatedProducts);
+  return cart;
 };
 
-export const removeFromCart = (productId: number): Cart =>{
-    const existingItem = cart.products.find((item)=> item.id === productId);
-    if (!existingItem){
-        throw new NotFoundError("Cart item not found");
-    }
-    const updateProducts = cart.products.filter((item)=> item.id !== productId);
-    return rebuildCart(updateProducts);
-}
+export const removeFromCart = async (productId: number) => {
+  const cart = await cartRepository.removeCartItem(DEFAULT_USER_ID, productId);
 
-export const clearCart = ():Cart => {
-    return rebuildCart([]);
-}
+  if (!cart) {
+    throw new NotFoundError("Cart item not found");
+  }
+
+  return cart;
+};
+
+export const clearCart = async () => {
+  return cartRepository.clearCart(DEFAULT_USER_ID);
+};

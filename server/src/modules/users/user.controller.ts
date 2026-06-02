@@ -1,21 +1,35 @@
 import type { NextFunction, Request, Response } from "express";
-import { BadRequestError } from "../../core/errors";
+import { validate } from "../../core/validation/validate";
 import * as userService from "./user.service";
+import {
+  createUserSchema,
+  findUserQuerySchema,
+  updateUserSchema,
+  userParamsSchema,
+} from "./user.validator";
 
-export const getUsers = (_req: Request, res: Response) => {
-  const users = userService.getUsers();
+export const getUsers = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const users = await userService.getUsers();
 
-  res.json(users);
+    res.json(users);
+  } catch (error) {
+    next(error);
+  }
 };
 
-export const getUserById = (
+export const getUserById = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const userId = Number(req.params.id);
-    const user = userService.getUserById(userId);
+    const params = validate(userParamsSchema, req.params);
+    const user = await userService.getUserById(params.id);
 
     res.json(user);
   } catch (error) {
@@ -23,20 +37,15 @@ export const getUserById = (
   }
 };
 
-export const findUserByUsernameOrEmail = (
+export const findUserByUsernameOrEmail = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const identifier =
-      typeof req.query.identifier === "string" ? req.query.identifier : "";
+    const query = validate(findUserQuerySchema, req.query);
 
-    if (!identifier) {
-      throw new BadRequestError("Username or email is required");
-    }
-
-    const user = userService.findUserByUsernameOrEmail(identifier);
+    const user = await userService.findUserByUsernameOrEmail(query.identifier);
 
     res.json(user);
   } catch (error) {
@@ -44,13 +53,14 @@ export const findUserByUsernameOrEmail = (
   }
 };
 
-export const createUser = (
+export const createUser = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const user = userService.createUser(req.body);
+    const body = validate(createUserSchema, req.body);
+    const user = await userService.createUser(body);
 
     res.status(201).json(user);
   } catch (error) {
@@ -58,14 +68,15 @@ export const createUser = (
   }
 };
 
-export const updateUser = (
+export const updateUser = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const userId = Number(req.params.id);
-    const user = userService.updateUser(userId, req.body);
+    const params = validate(userParamsSchema, req.params);
+    const body = validate(updateUserSchema, req.body);
+    const user = await userService.updateUser(params.id, body);
 
     res.json(user);
   } catch (error) {
@@ -73,14 +84,14 @@ export const updateUser = (
   }
 };
 
-export const deleteUser = (
+export const deleteUser = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const userId = Number(req.params.id);
-    const user = userService.deleteUser(userId);
+    const params = validate(userParamsSchema, req.params);
+    const user = await userService.deleteUser(params.id);
 
     res.json(user);
   } catch (error) {

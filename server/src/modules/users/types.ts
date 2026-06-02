@@ -6,9 +6,9 @@ export interface User {
   role: string;
   firstName: string;
   lastName: string;
-  phone?: string;
-  image?: string;
-  gender?: string;
+  phone?: string | null;
+  image?: string | null;
+  gender?: string | null;
 }
 
 export type PublicUser = Omit<User, "password">;
@@ -20,9 +20,9 @@ export interface CreateUserInput {
   role?: string;
   firstName: string;
   lastName: string;
-  phone?: string;
-  image?: string;
-  gender?: string;
+  phone?: string | null;
+  image?: string | null;
+  gender?: string | null;
 }
 
 export interface UpdateUserInput {
@@ -32,7 +32,7 @@ export interface UpdateUserInput {
   role?: string;
   firstName?: string;
   lastName?: string;
-  phone?: string;
-  image?: string;
-  gender?: string;
+  phone?: string | null;
+  image?: string | null;
+  gender?: string | null;
 }

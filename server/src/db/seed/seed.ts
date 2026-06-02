@@ -7,8 +7,8 @@
 import "dotenv/config";
 import bcrypt from "bcrypt";
 import { sql } from "drizzle-orm";
-import { db, pool } from "./index";
-import { users, products, carts, cartItems } from "./schema";
+import { db, pool } from "../index";
+import { users, products, carts, cartItems } from "../schema";
 import rawProducts from "./products.json";
 import rawUsers from "./users.json";
 
@@ -48,7 +48,20 @@ async function seed() {
   console.log("📦 Inserting products...");
   const insertedProducts = await db
     .insert(products)
-    .values(productData)
+    .values(
+      productData.map((product) => ({
+        id: product.id,
+        title: product.title,
+        description: product.description,
+        price: String(product.price),
+        discountPercentage: String(product.discountPercentage),
+        rating: String(product.rating),
+        stock: product.stock,
+        brand: product.brand ?? null,
+        category: product.category,
+        thumbnail: product.thumbnail,
+      })),
+    )
     .returning();
   console.log(`   ✔ ${insertedProducts.length} products`);
 
@@ -59,10 +72,7 @@ async function seed() {
   console.log("🛒 Inserting carts...");
   const [emilysCart, michaelsCart] = await db
     .insert(carts)
-    .values([
-      { userId: emily.id, total: "39.97", discountedTotal: "39.97" },
-      { userId: michael.id, total: "8.99", discountedTotal: "8.99" },
-    ])
+    .values([{ userId: emily.id }, { userId: michael.id }])
     .returning();
 
   await db.insert(cartItems).values([
@@ -70,19 +80,16 @@ async function seed() {
       cartId: emilysCart.id,
       productId: prd1.id,
       quantity: 2,
-      priceAtAdd: "9.99",
     },
     {
       cartId: emilysCart.id,
       productId: prd2.id,
       quantity: 1,
-      priceAtAdd: "19.99",
     },
     {
       cartId: michaelsCart.id,
       productId: prd5.id,
       quantity: 1,
-      priceAtAdd: "8.99",
     },
   ]);
   console.log(`   ✔ 2 carts with items`);

@@ -1,49 +1,52 @@
-import { NextFunction, Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
+import { validate } from "../../core/validation/validate";
 import * as productService from "./product.service";
+import {
+  getProductsQuerySchema,
+  productParamsSchema,
+} from "./product.validator";
 
-export const getProducts = (req: Request, res: Response)=>{
-    const skip =
-        typeof req.query.skip === "string" ? Number(req.query.skip) : undefined;
-    const limit =
-        typeof req.query.limit === "string" ? Number(req.query.limit) : undefined;
-    const category =
-        typeof req.query.category === "string" ? req.query.category : undefined;
-    const search =
-        typeof req.query.search === "string" ? req.query.search : undefined;
-    const response = productService.getProducts({
-        skip,
-        limit,
-        category,
-        search,
-    });
+export const getProducts = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const query = validate(getProductsQuerySchema, req.query);
+
+    const response = await productService.getProducts(query);
+
     res.json(response);
-}
+  } catch (error) {
+    next(error);
+  }
+};
 
-export const getProductById = (req: Request, res: Response, next: NextFunction)=>{
-    try{
-        const productId = Number(req.params.id);
-        const product = productService.getProductById(productId);
+export const getProductById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const params = validate(productParamsSchema, req.params);
+    const product = await productService.getProductById(params.id);
 
-        res.json(product);
-    }catch(error){
-        next(error);
-    }
-}
+    res.json(product);
+  } catch (error) {
+    next(error);
+  }
+};
 
-export const getCategories = (_req: Request, res: Response)=>{
-    const categories = productService.getCategories();
+export const getCategories = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const categories = await productService.getCategories();
 
     res.json(categories);
-}
-
-
-// 先理解 controller 是干嘛的：
-
-// routes 只负责定义 URL：GET /api/products
-// controller 负责真正处理请求：读数据、查产品、返回 JSON
-// types.ts 负责定义数据长什么样
-
-
-// req = request，请求进来的东西
-// res = response，要返回出去的东西
-// next = 把流程交给下一个 middleware，通常用于错误
+  } catch (error) {
+    next(error);
+  }
+};
