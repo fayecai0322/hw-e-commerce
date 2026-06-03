@@ -1,6 +1,13 @@
+import bcrypt from "bcrypt";
 import { BadRequestError, NotFoundError } from "../../core/errors";
 import * as userRepository from "./user.repository";
 import type { CreateUserInput, UpdateUserInput } from "./types";
+
+const SALT_ROUNDS = 10;
+
+const hashPassword = async (password: string) => {
+  return bcrypt.hash(password, SALT_ROUNDS);
+};
 
 export const getUsers = async () => {
   return userRepository.findUsers();
@@ -45,10 +52,11 @@ export const createUser = async (input: CreateUserInput) => {
     throw new BadRequestError("Username or email already exists");
   }
 
+  // Password hashing belongs in the service so every user-creation path is safe.
   return userRepository.createUser({
     username: input.username,
     email: input.email,
-    password: input.password,
+    password: await hashPassword(input.password),
     role: input.role ?? "user",
     firstName: input.firstName,
     lastName: input.lastName,
@@ -84,7 +92,13 @@ export const updateUser = async (id: number, input: UpdateUserInput) => {
     }
   }
 
-  const updatedUser = await userRepository.updateUser(id, input);
+  const updateInput = {
+    ...input,
+    // Only re-hash when the caller is actually changing the password.
+    password: input.password ? await hashPassword(input.password) : undefined,
+  };
+
+  const updatedUser = await userRepository.updateUser(id, updateInput);
 
   if (!updatedUser) {
     throw new NotFoundError("User not found");

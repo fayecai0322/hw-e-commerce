@@ -10,6 +10,7 @@ export interface FindProductsOptions {
 }
 
 const toProduct = (product: typeof products.$inferSelect) => ({
+  // PostgreSQL numeric columns come back as strings, so normalize them here.
   ...product,
   price: Number(product.price),
   discountPercentage: Number(product.discountPercentage),
@@ -20,6 +21,7 @@ const toProduct = (product: typeof products.$inferSelect) => ({
 export const findProducts = async (options: FindProductsOptions = {}) => {
   const { skip = 0, limit = 30, category, search } = options;
 
+  // Compose optional filters so pagination and counting share the same query rules.
   const filters = [
     category ? eq(products.category, category) : undefined,
     search

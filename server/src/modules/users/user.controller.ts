@@ -1,5 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
+import { ForbiddenError, UnauthorizedError } from "../../core/errors";
 import { validate } from "../../core/validation/validate";
+import type { AuthenticatedRequest } from "../auth/types";
 import * as userService from "./user.service";
 import {
   createUserSchema,
@@ -7,6 +9,21 @@ import {
   updateUserSchema,
   userParamsSchema,
 } from "./user.validator";
+
+const assertSelfOrAdmin = (req: AuthenticatedRequest, targetUserId: number) => {
+  if (!req.userId || !req.user) {
+    throw new UnauthorizedError("Authentication required");
+  }
+
+  // Admins can manage any user record; everyone else is limited to self-access.
+  if (req.user.role === "admin") {
+    return;
+  }
+
+  if (req.userId !== targetUserId) {
+    throw new ForbiddenError("You can only access your own user record");
+  }
+};
 
 export const getUsers = async (
   _req: Request,
@@ -23,12 +40,13 @@ export const getUsers = async (
 };
 
 export const getUserById = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction,
 ) => {
   try {
     const params = validate(userParamsSchema, req.params);
+    assertSelfOrAdmin(req, params.id);
     const user = await userService.getUserById(params.id);
 
     res.json(user);
@@ -38,12 +56,16 @@ export const getUserById = async (
 };
 
 export const findUserByUsernameOrEmail = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction,
 ) => {
   try {
     const query = validate(findUserQuerySchema, req.query);
+
+    if (!req.user || req.user.role !== "admin") {
+      throw new ForbiddenError("Admin access required");
+    }
 
     const user = await userService.findUserByUsernameOrEmail(query.identifier);
 
@@ -69,12 +91,13 @@ export const createUser = async (
 };
 
 export const updateUser = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction,
 ) => {
   try {
     const params = validate(userParamsSchema, req.params);
+    assertSelfOrAdmin(req, params.id);
     const body = validate(updateUserSchema, req.body);
     const user = await userService.updateUser(params.id, body);
 
@@ -85,12 +108,13 @@ export const updateUser = async (
 };
 
 export const deleteUser = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction,
 ) => {
   try {
     const params = validate(userParamsSchema, req.params);
+    assertSelfOrAdmin(req, params.id);
     const user = await userService.deleteUser(params.id);
 
     res.json(user);

@@ -3,6 +3,7 @@ import { db } from "../../db";
 import { users, type NewUser } from "./user.schema";
 
 export const toPublicUser = (user: typeof users.$inferSelect) => {
+  // Repositories strip password before returning user data to most callers.
   const { password, ...publicUser } = user;
   return publicUser;
 };
@@ -18,6 +19,7 @@ export const findUserById = async (id: number) => {
 };
 
 export const findPrivateUserByUsernameOrEmail = async (identifier: string) => {
+  // Login and duplicate checks need access to the stored password hash.
   const [user] = await db
     .select()
     .from(users)

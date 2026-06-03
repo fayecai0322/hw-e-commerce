@@ -15,6 +15,7 @@ export const getProducts = async (options: GetProductsOptions = {}) => {
 export const getProductById = async (id: number) => {
   const product = await productRepository.findProductById(id);
 
+  // Services turn "not found" repository results into API-friendly errors.
   if (!product) {
     throw new NotFoundError("Product not found");
   }

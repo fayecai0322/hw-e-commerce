@@ -4,6 +4,7 @@ import { products } from "../products/product.schema";
 import { carts, cartItems } from "./cart.schema";
 
 const mapCart = (cart: typeof carts.$inferSelect, items: any[]) => {
+  // Join rows are reshaped into the cart response expected by the client.
   const mappedItems = items.map((item) => {
     const price = Number(item.product.price);
     const discountPercentage = Number(item.product.discountPercentage);
@@ -38,6 +39,7 @@ export const findOrCreateCartByUserId = async (userId: number) => {
 
   if (existingCart) return existingCart;
 
+  // Every authenticated user should always have a cart record to work with.
   const [cart] = await db.insert(carts).values({ userId }).returning();
   return cart;
 };
@@ -72,6 +74,7 @@ export const addCartItem = async (userId: number, productId: number, quantity: n
     .where(and(eq(cartItems.cartId, cart.id), eq(cartItems.productId, productId)));
 
   if (existingItem) {
+    // Keep one row per product and grow its quantity instead of duplicating rows.
     await db
       .update(cartItems)
       .set({ quantity: existingItem.quantity + quantity })

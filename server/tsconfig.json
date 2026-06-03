@@ -8,6 +8,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "types": ["node"],
+    "typeRoots": ["./src/types", "./node_modules/@types"],
     "resolveJsonModule": true
   },
   "include": ["src/**/*", "build.ts", "drizzle.config.ts"]

@@ -12,6 +12,7 @@ export const getProducts = async (
   next: NextFunction,
 ) => {
   try {
+    // Validate and coerce query params before they reach the service layer.
     const query = validate(getProductsQuerySchema, req.query);
 
     const response = await productService.getProducts(query);

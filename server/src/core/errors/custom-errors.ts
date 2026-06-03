@@ -45,3 +45,13 @@ export class BadRequestError extends AppError {
         super(message,400, ERROR_CODES.BAD_REQUEST);
     }
 }
+export class UnauthorizedError extends AppError {
+    constructor(message = "Unauthorized"){
+        super(message,401, ERROR_CODES.UNAUTHORIZED);
+    }
+}
+export class ForbiddenError extends AppError {
+    constructor(message = "Forbidden"){
+        super(message,403, ERROR_CODES.FORBIDDEN);
+    }
+}
